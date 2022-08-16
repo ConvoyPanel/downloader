@@ -100,7 +100,7 @@ func main() {
 		{
 			VMID: 1000,
 			Name: "Ubuntu 20.04",
-			Link: "https://cdn.convoypanel.com/ubuntu-20-04.vma.zst",
+			Link: "https://cdn.convoypanel.com/ubuntu/ubuntu-20-04-amd64.vma.zst",
 		},
 	}
 
@@ -108,7 +108,7 @@ func main() {
 	p := mpb.New(mpb.WithWaitGroup(&wg))
 
 	for _, image := range images {
-		fileName := strconv.Itoa(image.VMID) + ".vma.zst"
+		fileName := "vzdump-qemu-" + strconv.Itoa(image.VMID) + ".vma.zst"
 		wg.Add(1)
 
 		go func(image Template) {
@@ -124,7 +124,7 @@ func main() {
 
 	p.Wait()
 
-	fmt.Printf("Importing VMs to %s", location)
+	fmt.Printf("Importing VMs to %s\n", location)
 
 	for _, image := range images {
 		wg.Add(1)
@@ -134,10 +134,9 @@ func main() {
 
 			defer wg.Done()
 
-			fmt.Println(fmt.Sprintf("qmrestore %d.vma.zst %d -storage %s", image.VMID, image.VMID, location))
-
-			err := exec.Command("bash", "-c", fmt.Sprintf("qmrestore %d.vma.zst %d -storage %s", image.VMID, image.VMID, location)).Run()
+			err := exec.Command("bash", "-c", fmt.Sprintf("qmrestore vzdump-qemu-%d.vma.zst %d -storage %s", image.VMID, image.VMID, location)).Run()
 			if err != nil {
+				fmt.Println(err)
 				panic(err)
 			}
 
