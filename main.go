@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"os"
 	"os/exec"
@@ -15,22 +14,22 @@ import (
 	"sync"
 	"syscall"
 
-	//"github.com/schollz/progressbar/v3"
 	"github.com/vbauerster/mpb/v7"
+	"github.com/vbauerster/mpb/v7/decor"
 )
 
 func DownloadFile(url string, dest string, name string, progressName string, p *mpb.Progress) {
 	fileName := name //path.Base(url)
 
 	filePath := fmt.Sprintf("%s/%s.tmp", dest, fileName)
-	out, err := os.Create(filePath)
+	file, err := os.Create(filePath)
 
 	if err != nil {
 		fmt.Println(filePath)
 		panic(err)
 	}
 
-	defer out.Close()
+	defer file.Close()
 
 	resp, err := http.Get(url)
 
@@ -40,12 +39,20 @@ func DownloadFile(url string, dest string, name string, progressName string, p *
 
 	defer resp.Body.Close()
 
-	/* bar := progressbar.DefaultBytes(
-		resp.ContentLength,
-		fmt.Sprintf("Downloading %s", progressName),
-	) */
+	bar := p.New(resp.ContentLength, mpb.BarStyle().Rbound("|"),
+		mpb.PrependDecorators(
+			decor.Name(progressName+"  "),
+			decor.CountersKibiByte("% .2f / % .2f"),
+		),
+		mpb.AppendDecorators(
+			decor.EwmaETA(decor.ET_STYLE_GO, 90),
+			decor.Name(" ] "),
+			decor.EwmaSpeed(decor.UnitKiB, "% .2f", 60),
+		))
 
-	_, err = io.Copy(io.MultiWriter(out /* bar */), resp.Body)
+	proxyReader := bar.ProxyReader(resp.Body)
+
+	_, err = io.Copy(file, proxyReader)
 
 	if err != nil {
 		panic(err)
@@ -55,7 +62,7 @@ func DownloadFile(url string, dest string, name string, progressName string, p *
 }
 
 func cleanup() {
-	files, err := filepath.Glob("*.img*")
+	files, err := filepath.Glob("*.vma*")
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -71,6 +78,7 @@ type Template struct {
 	VMID int
 	Name string
 	Link string `json:"-"`
+	Disk string `json:"-"`
 }
 
 func main() {
@@ -85,23 +93,14 @@ func main() {
 	reader := bufio.NewReader(os.Stdin)
 	fmt.Println("Storage location to import VMs (e.g. local, local-lvm)")
 	fmt.Print("Location: ")
-	location, _ := reader.ReadString('\n')
+	input, _ := reader.ReadString('\n')
+	location := strings.TrimSuffix(input, "\n")
 
 	images := []Template{
 		{
 			VMID: 1000,
-			Name: "Ubuntu 22.04",
-			Link: "https://cloud-images.ubuntu.com/focal/current/focal-server-cloudimg-amd64.img",
-		},
-		{
-			VMID: 1001,
 			Name: "Ubuntu 20.04",
-			Link: "https://cloud-images.ubuntu.com/focal/current/focal-server-cloudimg-amd64.img",
-		},
-		{
-			VMID: 1002,
-			Name: "Ubuntu 18.04",
-			Link: "https://cloud-images.ubuntu.com/bionic/current/bionic-server-cloudimg-amd64.img",
+			Link: "https://cdn.convoypanel.com/ubuntu-20-04.vma.zst",
 		},
 	}
 
@@ -109,7 +108,7 @@ func main() {
 	p := mpb.New(mpb.WithWaitGroup(&wg))
 
 	for _, image := range images {
-		fileName := strconv.Itoa(image.VMID) + ".img"
+		fileName := strconv.Itoa(image.VMID) + ".vma.zst"
 		wg.Add(1)
 
 		go func(image Template) {
@@ -128,19 +127,25 @@ func main() {
 	fmt.Printf("Importing VMs to %s", location)
 
 	for _, image := range images {
-		fmt.Printf("Importing %s (vmid: %d)\n", image.Name, image.VMID)
+		wg.Add(1)
 
-		err := exec.Command("bash", "-c", fmt.Sprintf("qm create %d --memory 2048 --net0 virtio,bridge=vmbr0", image.VMID)).Run()
-		if err != nil {
-			fmt.Printf("Failed to import %s (vmid: %d)\n", image.Name, image.VMID)
-			continue
-		}
+		go func(image Template) {
+			fmt.Printf("Importing %s (vmid: %d)\n", image.Name, image.VMID)
 
-		err = exec.Command("bash", "-c", fmt.Sprintf("qm importdisk %d %s %s", image.VMID, strconv.Itoa(image.VMID)+".img", location)).Run()
-		if err != nil {
-			log.Fatal(err)
-		}
+			defer wg.Done()
+
+			fmt.Println(fmt.Sprintf("qmrestore %d.vma.zst %d -storage %s", image.VMID, image.VMID, location))
+
+			err := exec.Command("bash", "-c", fmt.Sprintf("qmrestore %d.vma.zst %d -storage %s", image.VMID, image.VMID, location)).Run()
+			if err != nil {
+				panic(err)
+			}
+
+			fmt.Printf("Imported %s (vmid: %d)\n", image.Name, image.VMID)
+		}(image)
 	}
+
+	wg.Wait()
 
 	fmt.Println("Cleaning up...")
 	cleanup()
