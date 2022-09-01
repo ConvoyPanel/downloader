@@ -92,7 +92,7 @@ func catchInterrupts() {
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 	go func() {
 		<-c
-		//cleanup() // TODO: allow cleanup
+		cleanup()
 		os.Exit(1)
 	}()
 }
@@ -224,7 +224,6 @@ func main() {
 	for spinnerIndex, image := range downloaded {
 
 		go func(image Template, index int, spinners []Spinner) {
-			defer wg.Done()
 			s := spinners[index].Spinner
 
 			time.Sleep(time.Second)
@@ -232,18 +231,21 @@ func main() {
 			err := exec.Command("bash", "-c", fmt.Sprintf("qmrestore vzdump-qemu-%d.vma.zst %d -storage %s", image.VMID, image.VMID, config.Location)).Run()
 
 			if err != nil {
-				/* s.Error()
+				s.Error()
 				s.UpdateMessage(fmt.Sprintf("Failed to import %s (vmid: %d)\n", image.Name, image.VMID))
-				return */
+				wg.Done()
+				return
 			}
 
 			s.UpdateMessage(fmt.Sprintf("Imported %s (vmid: %d)\n", image.Name, image.VMID))
-			s.Error()
+			s.Complete()
+			wg.Done()
 		}(image, spinnerIndex, spinners)
 	}
 
 	wg.Wait()
+	manager.Stop()
 
 	fmt.Println(chalk.White.NewStyle().WithBackground(chalk.Green), "Images locked and loaded. Start capitalizing on servers!", chalk.Reset)
-	//cleanup()
+	cleanup()
 }
