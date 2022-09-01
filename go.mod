@@ -3,14 +3,21 @@ module github.com/convoypanel/downloader
 go 1.19
 
 require (
+	github.com/briandowns/spinner v1.19.0
+	github.com/jaxleof/uispinner v1.0.0
+	github.com/ttacon/chalk v0.0.0-20160626202418-22c06c80ed31
+	github.com/vbauerster/mpb/v7 v7.4.2
+)
+
+require (
 	github.com/VividCortex/ewma v1.2.0 // indirect
 	github.com/acarl005/stripansi v0.0.0-20180116102854-5a71ef0e047d // indirect
+	github.com/chelnak/ysmrr v0.1.1 // indirect
+	github.com/fatih/color v1.13.0 // indirect
+	github.com/gosuri/uilive v0.0.4 // indirect
+	github.com/mattn/go-colorable v0.1.13 // indirect
+	github.com/mattn/go-isatty v0.0.16 // indirect
 	github.com/mattn/go-runewidth v0.0.13 // indirect
-	github.com/mitchellh/colorstring v0.0.0-20190213212951-d06e56a500db // indirect
 	github.com/rivo/uniseg v0.3.4 // indirect
-	github.com/schollz/progressbar/v3 v3.9.0 // indirect
-	github.com/vbauerster/mpb/v7 v7.4.2 // indirect
-	golang.org/x/crypto v0.0.0-20220722155217-630584e8d5aa // indirect
-	golang.org/x/sys v0.0.0-20220811171246-fbc7d0a398ab // indirect
-	golang.org/x/term v0.0.0-20220722155259-a9ba230a4035 // indirect
+	golang.org/x/sys v0.0.0-20220825204002-c680a09ffe64 // indirect
 )

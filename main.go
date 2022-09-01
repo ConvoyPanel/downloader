@@ -9,11 +9,17 @@ import (
 	"os/exec"
 	"os/signal"
 	"path/filepath"
+	"reflect"
 	"strconv"
 	"strings"
 	"sync"
 	"syscall"
+	"time"
 
+	"github.com/chelnak/ysmrr"
+	"github.com/chelnak/ysmrr/pkg/animations"
+	"github.com/chelnak/ysmrr/pkg/colors"
+	"github.com/ttacon/chalk"
 	"github.com/vbauerster/mpb/v7"
 	"github.com/vbauerster/mpb/v7/decor"
 )
@@ -81,71 +87,163 @@ type Template struct {
 	Disk string `json:"-"`
 }
 
-func main() {
+func catchInterrupts() {
 	c := make(chan os.Signal)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
 	go func() {
 		<-c
-		cleanup()
+		//cleanup() // TODO: allow cleanup
 		os.Exit(1)
 	}()
+}
 
+type Config struct {
+	Location string
+}
+
+func getConfig() (config Config) {
 	reader := bufio.NewReader(os.Stdin)
 	fmt.Println("Storage location to import VMs (e.g. local, local-lvm)")
 	fmt.Print("Location: ")
 	input, _ := reader.ReadString('\n')
 	location := strings.TrimSuffix(input, "\n")
 
-	images := []Template{
-		{
-			VMID: 1000,
-			Name: "Ubuntu 20.04",
-			Link: "https://cdn.convoypanel.com/ubuntu/ubuntu-20-04-amd64.vma.zst",
-		},
+	config = Config{
+		Location: location,
 	}
 
-	var wg sync.WaitGroup
-	p := mpb.New(mpb.WithWaitGroup(&wg))
+	return
+}
+
+var images = []Template{
+	{
+		VMID: 1000,
+		Name: "Ubuntu 20.04",
+		Link: "https://cdn.convoypanel.com/ubuntu/ubuntu-20-04-amd64.vma.zst",
+	},
+	{
+		VMID: 1001,
+		Name: "Ubuntu 22.04",
+		Link: "https://cdn.convoypanel.com/ubuntu/ubuntu-22-04-amd64.vma.zst",
+	},
+	{
+		VMID: 1002,
+		Name: "Windows Server 2022",
+		Link: "https://cdn.convoypanel.com/windows/windows-2022-datacenter-amd64.vma.zst",
+	},
+	{
+		VMID: 1003,
+		Name: "Windows Server 2019",
+		Link: "https://cdn.convoypanel.com/windows/windows-2019-datacenter-amd64.vma.zst",
+	},
+}
+
+func ChanToSlice(ch interface{}) interface{} {
+	chv := reflect.ValueOf(ch)
+	slv := reflect.MakeSlice(reflect.SliceOf(reflect.TypeOf(ch).Elem()), 0, 0)
+	for {
+		v, ok := chv.Recv()
+		if !ok {
+			return slv.Interface()
+		}
+		slv = reflect.Append(slv, v)
+	}
+}
+
+func getImages(wg *sync.WaitGroup) []Template {
+	p := mpb.New(mpb.WithWaitGroup(wg))
+
+	var (
+		mu        = &sync.Mutex{}
+		destSlice = make([]Template, 0)
+	)
 
 	for _, image := range images {
 		fileName := "vzdump-qemu-" + strconv.Itoa(image.VMID) + ".vma.zst"
 		wg.Add(1)
 
 		go func(image Template) {
+			/* if err := exec.Command("bash", "-c", fmt.Sprintf("qm status %d", image.VMID)).Run(); err != nil {
+				fmt.Printf("Image '%s' already exists!\n", image.Name)
+
+				wg.Done()
+				return
+			} */
+
 			if _, err := os.Stat(fileName); err != nil {
 				DownloadFile(image.Link, "./", fileName, image.Name, p)
 			} else {
-				fmt.Printf("Image '%s' already exists!\n", image.Name)
+				fmt.Printf("Image '%s' is already downloaded!\n", image.Name)
 			}
 
-			wg.Done()
+			mu.Lock()
+			destSlice = append(destSlice, image)
+			mu.Unlock()
+
+			defer wg.Done()
 		}(image)
 	}
 
 	p.Wait()
 
-	fmt.Printf("Importing VMs to %s\n", location)
+	return destSlice
+}
 
-	for _, image := range images {
-		wg.Add(1)
+type Spinner struct {
+	Spinner *ysmrr.Spinner
+}
 
-		go func(image Template) {
-			fmt.Printf("Importing %s (vmid: %d)\n", image.Name, image.VMID)
+func main() {
+	catchInterrupts()
 
+	config := getConfig()
+
+	var wg sync.WaitGroup
+
+	downloaded := getImages(&wg)
+
+	fmt.Printf("Importing VMs to %s\n", config.Location)
+
+	manager := ysmrr.NewSpinnerManager(
+		ysmrr.WithAnimation(animations.Pipe),
+		ysmrr.WithSpinnerColor(colors.FgHiBlue),
+	)
+
+	spinners := make([]Spinner, 0)
+
+	// add spinners
+	for _, image := range downloaded {
+		s := manager.AddSpinner(fmt.Sprintf("Importing %s (vmid: %d)\n", image.Name, image.VMID))
+
+		spinners = append(spinners, Spinner{s})
+	}
+
+	wg.Add(len(spinners))
+	manager.Start()
+
+	for spinnerIndex, image := range downloaded {
+
+		go func(image Template, index int, spinners []Spinner) {
 			defer wg.Done()
+			s := spinners[index].Spinner
 
-			err := exec.Command("bash", "-c", fmt.Sprintf("qmrestore vzdump-qemu-%d.vma.zst %d -storage %s", image.VMID, image.VMID, location)).Run()
+			time.Sleep(time.Second)
+
+			err := exec.Command("bash", "-c", fmt.Sprintf("qmrestore vzdump-qemu-%d.vma.zst %d -storage %s", image.VMID, image.VMID, config.Location)).Run()
+
 			if err != nil {
-				fmt.Println(err)
-				panic(err)
+				/* s.Error()
+				s.UpdateMessage(fmt.Sprintf("Failed to import %s (vmid: %d)\n", image.Name, image.VMID))
+				return */
 			}
 
-			fmt.Printf("Imported %s (vmid: %d)\n", image.Name, image.VMID)
-		}(image)
+			s.UpdateMessage(fmt.Sprintf("Imported %s (vmid: %d)\n", image.Name, image.VMID))
+			s.Error()
+		}(image, spinnerIndex, spinners)
 	}
 
 	wg.Wait()
 
-	fmt.Println("Cleaning up...")
-	cleanup()
+	fmt.Println(chalk.White.NewStyle().WithBackground(chalk.Green), "Images locked and loaded. Start capitalizing on servers!", chalk.Reset)
+	//cleanup()
 }
