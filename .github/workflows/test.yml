@@ -1,0 +1,16 @@
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test: 
+    name: Build on Go 1.18.0
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-go@v3
+        with:
+          go-version: '^1.18.0' # The Go version to download (if necessary) and use.
+      - run: go build main.go
