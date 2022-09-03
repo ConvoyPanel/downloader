@@ -198,7 +198,7 @@ func getImages(wg *sync.WaitGroup) []Template {
 		wg.Add(1)
 
 		go func(image Template) {
-			if err := exec.Command("bash", "-c", fmt.Sprintf("qm status %d", image.VMID)).Run(); err != nil {
+			if err := exec.Command("bash", "-c", fmt.Sprintf("qm status %d", image.VMID)).Run(); err == nil {
 				fmt.Printf("Image '%s' already exists!\n", image.Name)
 
 				wg.Done()
