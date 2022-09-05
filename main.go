@@ -117,6 +117,11 @@ func getConfig() (config Config) {
 
 var images = []Template{
 	{
+		VMID: 1011,
+		Name: "Ubuntu 18.04",
+		Link: "https://cdn.convoypanel.com/ubuntu/ubuntu-18-04-amd64.vma.zst",
+	},
+	{
 		VMID: 1000,
 		Name: "Ubuntu 20.04",
 		Link: "https://cdn.convoypanel.com/ubuntu/ubuntu-20-04-amd64.vma.zst",
