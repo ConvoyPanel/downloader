@@ -141,7 +141,7 @@ var images = []Template{
 		Name: "Windows Server 2019",
 		Link: "https://cdn.convoypanel.com/windows/windows-2019-datacenter-amd64.vma.zst",
 	},
-	{
+	/* {
 		VMID: 1004,
 		Name: "AlmaLinux 8",
 		Link: "https://cdn.convoypanel.com/almalinux/almalinux-8-amd64.vma.zst",
@@ -150,7 +150,7 @@ var images = []Template{
 		VMID: 1005,
 		Name: "AlmaLinux 9",
 		Link: "https://cdn.convoypanel.com/almalinux/almalinux-9-amd64.vma.zst",
-	},
+	}, */
 	{
 		VMID: 1006,
 		Name: "Centos 7",
@@ -171,11 +171,11 @@ var images = []Template{
 		Name: "Rocky Linux 8",
 		Link: "https://cdn.convoypanel.com/rocky-linux/rocky-linux-8-amd64.vma.zst",
 	},
-	{
+	/* {
 		VMID: 1010,
 		Name: "Rocky Linux 9",
 		Link: "https://cdn.convoypanel.com/rocky-linux/rocky-linux-9-amd64.vma.zst",
-	},
+	}, */
 }
 
 func ChanToSlice(ch interface{}) interface{} {
