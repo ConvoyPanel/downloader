@@ -10,8 +10,8 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-go@v3
-          with:
-            go-version: '^1.18.0'
+        with:
+          go-version: '^1.18.0'
 
       - name: Build
         env:
@@ -48,7 +48,7 @@ jobs:
           git checkout -b $BRANCH
           git push -u origin $BRANCH
 
-            - name: Create Release
+      - name: Create Release
         id: create_release
         uses: actions/create-release@v1
         env:
