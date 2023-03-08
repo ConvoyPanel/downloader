@@ -1,7 +1,6 @@
 services:
   workspace:
-    image: golang
-    tty: true
-    working_dir: /app
+    build: .
     volumes:
-      - .:/app
+      - .:/workspace
+    tty: true

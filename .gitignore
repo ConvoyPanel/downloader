@@ -1,3 +1,4 @@
-main
-downloader
-vzdump*
+debug/
+target/
+*.vma.zst
+*.vma.zst.tmp
