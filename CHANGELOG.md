@@ -8,7 +8,7 @@ This project follows [Semantic Versioning](http://semver.org) guidelines.
 
 ### Fixed
 
-- Out of memory issue when downloading the templates
+- Out of memory issue when downloading the templates (thanks for the tip adly)
 
 ## v1.0.0
 
