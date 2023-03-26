@@ -4,6 +4,12 @@ This file is a running track of new features and fixes to each version of the pa
 
 This project follows [Semantic Versioning](http://semver.org) guidelines.
 
+## v1.0.1
+
+### Fixed
+
+- Out of memory issue when downloading the templates
+
 ## v1.0.0
 
 ### Changed

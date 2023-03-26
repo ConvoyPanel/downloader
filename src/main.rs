@@ -6,9 +6,8 @@ use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use std::process::Stdio;
 use tokio::task;
-use tokio::time::{sleep, Duration};
 use tokio::{fs::File as TokioFile, io::AsyncWriteExt};
-use tokio::io::{self, AsyncBufReadExt, BufReader};
+use tokio::io::{AsyncBufReadExt, BufReader};
 use tokio::process::Command;
 use regex::Regex;
 
@@ -201,8 +200,6 @@ async fn download_template(template: &Template, progress_bar: &ProgressBar) -> R
 
     progress_bar.set_length(content_length);
 
-    let mut buffer: Vec<u8> = Vec::new();
-
     let file_name = response
         .url()
         .path_segments()
@@ -222,7 +219,6 @@ async fn download_template(template: &Template, progress_bar: &ProgressBar) -> R
 
     while let Some(chunk) = content.next().await {
         let data = chunk.unwrap();
-        buffer.extend(data.iter());
         progress_bar.inc(data.len() as u64);
         file.write_all(&data).await.expect("Couldn't write file");
     }
