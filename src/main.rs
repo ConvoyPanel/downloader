@@ -14,8 +14,6 @@ async fn main() -> Result<(), ()> {
     let tmp_dir = tempfile::tempdir().unwrap();
     let tmp_path = tmp_dir.path();
 
-    dbg!(&tmp_path);
-
     tokio::select! {
         _ = download_and_install_templates(&tmp_path, &storage_volume) => {},
         _ = tokio::signal::ctrl_c() => {

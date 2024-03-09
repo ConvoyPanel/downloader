@@ -69,6 +69,11 @@ pub async fn download_and_install_templates(tmp_dir: &Path, storage_volume: &Str
     for group in groups {
         for template in group.templates {
             let pb = mpb.add(ProgressBar::new(100));
+            pb.set_style(
+                ProgressStyle::default_bar()
+                    .template("{msg}")
+                    .unwrap(),
+            );
 
             if !is_vmid_used(&template.vmid) {
                 let client = client.clone();
@@ -83,7 +88,7 @@ pub async fn download_and_install_templates(tmp_dir: &Path, storage_volume: &Str
 
                 tasks.push(task);
             } else {
-                pb.finish_with_message(format!("vmid {} is taken for {}", template.vmid, template.name));
+                pb.finish_with_message(format!("{}: vmid {} is taken", template.name, template.vmid));
             }
         }
     }
