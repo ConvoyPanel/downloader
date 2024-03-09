@@ -2,3 +2,4 @@ debug/
 target/
 *.vma.zst
 *.vma.zst.tmp
+.idea
