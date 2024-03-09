@@ -72,11 +72,11 @@ pub async fn download_template(tmp_dir: &Path, client: &Client, template: &Templ
 
         match extension {
             Some(ext) => {
-                // if &ext == "vma" {
-                //     "" // indicative of no compression used
-                // }
-
-                format!(".{}", ext)
+                if &ext == "vma" {
+                    "".to_string() // indicative of no compression used
+                } else {
+                    format!(".{}", ext)
+                }
             }
             None => panic!("{}", format!("{}: Unsupported image format", template.name)) // we can't handle non-vma files
         }

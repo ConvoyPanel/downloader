@@ -4,6 +4,12 @@ This file is a running track of new features and fixes to each version of the pa
 
 This project follows [Semantic Versioning](http://semver.org) guidelines.
 
+## v2.0.1
+
+### Changes
+
+- Added a check on the compression type used for the templates to determine correct file extension.
+
 ## v2.0.0
 
 ### Changes
