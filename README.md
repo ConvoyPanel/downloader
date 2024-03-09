@@ -37,4 +37,4 @@ list [here](https://images.cdn.convoypanel.com/images.json).
 
 ## License
 
-Distributed under the MIT License. See `LICENSE` for more information.
+Distributed under the AGPL-3.0 License. See `LICENSE` for more information.
