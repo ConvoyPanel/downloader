@@ -21,8 +21,9 @@ templates [here](https://images.cdn.convoypanel.com/images.json).
 
 1. Download the binary onto your Proxmox node for the corresponding architecture from
    the [releases](https://github.com/ConvoyPanel/downloader/releases/latest) page.
-2. Make the binary executable (e.g., `chmod +x downloader_x86`)
-3. Run the binary from the terminal (e.g., `./downloader_x86`)
+   - On terminal, you may use `wget https://github.com/ConvoyPanel/downloader/releases/download/v2.0.1/downloader_x86` 
+3. Make the binary executable (e.g., `chmod +x downloader_x86`)
+4. Run the binary from the terminal (e.g., `./downloader_x86`)
 
 ### Custom Images List
 
